@@ -1,41 +1,452 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boat Tracker</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SY Sula — Amel Super Maramu — Where's Sula?</title>
+  <meta name="description" content="Follow SY Sula, an Amel Super Maramu (Hull #140), on her voyage around the world. Live tracking for friends and family." />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amel: {
+              red: '#D42B2B',
+              redDark: '#B22222',
+              blue: '#2255CC',
+              blueDark: '#1A3F99',
+              cream: '#FAF7F2',
+              warmWhite: '#F5F0E8',
+              navy: '#0B1628',
+              navyLight: '#12203D',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Playfair Display', 'Georgia', 'serif'],
+          }
         }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #333;
-            font-size: 1.2rem;
-        }
-    </style>
+      }
+    }
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+
+  <style>
+    html { scroll-behavior: smooth; }
+
+    /* ── Hero ──────────────────────────────────────── */
+    .hero-bg {
+      background:
+        linear-gradient(170deg, rgba(11,22,40,0.80) 0%, rgba(11,22,40,0.50) 35%, rgba(11,22,40,0.75) 100%),
+        url('https://images.unsplash.com/photo-1500514966906-fe245eea9344?auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center 35%;
+    }
+
+    /* ── Wave divider ─────────────────────────────── */
+    .wave-divider {
+      position: absolute; bottom: -1px; left: 0; width: 100%;
+      overflow: hidden; line-height: 0;
+    }
+    .wave-divider svg {
+      position: relative; display: block;
+      width: calc(100% + 1.3px); height: 60px;
+    }
+
+    /* ── Float animation ──────────────────────────── */
+    .float { animation: float 5s ease-in-out infinite; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    /* ── Scroll indicator ─────────────────────────── */
+    .scroll-bounce { animation: scrollBounce 2s ease-in-out infinite; }
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateY(0); opacity: 0.5; }
+      50% { transform: translateY(6px); opacity: 1; }
+    }
+
+    /* ── Nav ───────────────────────────────────────── */
+    .nav-glass {
+      background: rgba(11, 22, 40, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .nav-glass.scrolled {
+      background: rgba(11, 22, 40, 0.95);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    /* ── Tracker loading ──────────────────────────── */
+    .tracker-loading {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #0B1628;
+      transition: opacity 0.6s ease;
+      z-index: 10;
+    }
+    .tracker-loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top-color: #D42B2B;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Tracker glow ─────────────────────────────── */
+    .tracker-glow {
+      box-shadow:
+        0 0 80px rgba(212, 43, 43, 0.08),
+        0 0 40px rgba(34, 85, 204, 0.06),
+        0 25px 60px -12px rgba(0,0,0,0.5);
+    }
+
+    /* ── Amel red accent line ─────────────────────── */
+    .amel-accent {
+      background: linear-gradient(90deg, #D42B2B, #2255CC);
+      height: 3px;
+    }
+
+    /* ── Boat illustration ────────────────────────── */
+    .boat-illustration {
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+      max-height: 340px;
+      object-fit: contain;
+    }
+
+    /* ── Specs grid ───────────────────────────────── */
+    .spec-item {
+      border-left: 2px solid #D42B2B;
+    }
+
+    /* ── Signature ────────────────────────────────── */
+    .signature-img {
+      filter: invert(1) brightness(2);
+      opacity: 0.12;
+    }
+
+    /* ── Subtle grain texture ─────────────────────── */
+    .grain::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Card hover ───────────────────────────────── */
+    .info-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .info-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+  </style>
 </head>
-<body>
-    <iframe src="https://www.predictwind.com/tracking/SYSula" allowfullscreen></iframe>
-    <!-- Optional: add a small loading indicator until iframe loads -->
-    <div class="loading" id="loading">Loading map...</div>
-    <script>
-        // Hide loading message when iframe has loaded
-        document.querySelector('iframe').addEventListener('load', function() {
-            document.getElementById('loading').style.display = 'none';
-        });
-    </script>
+
+<body class="bg-amel-navy text-white font-sans antialiased">
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- NAVBAR                                             -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <nav id="navbar" class="nav-glass fixed top-0 inset-x-0 z-50 transition-all duration-300">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo + boat name -->
+      <a href="#" class="flex items-center gap-3 group">
+        <img src="Amel Vector Logo.jpeg" alt="Amel" class="h-7 opacity-90 group-hover:opacity-100 transition-opacity" />
+        <div class="h-5 w-px bg-white/20"></div>
+        <span class="text-base font-semibold tracking-wide text-white/90 group-hover:text-white transition-colors">SY Sula</span>
+      </a>
+      <!-- Nav links -->
+      <div class="flex items-center gap-6 text-sm">
+        <a href="#tracker" class="text-white/60 hover:text-white transition-colors hidden sm:block">Tracker</a>
+        <a href="#about" class="text-white/60 hover:text-white transition-colors hidden sm:block">The Boat</a>
+        <a href="https://www.predictwind.com/tracking/SYSula" target="_blank" rel="noopener"
+          class="bg-amel-red/20 text-amel-red hover:bg-amel-red/30 px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-amel-red/30 brightness-125">
+          PredictWind ↗
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- HERO                                               -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section class="hero-bg relative min-h-[90vh] flex items-center justify-center text-center px-6 pt-16">
+    <div class="max-w-3xl relative z-10">
+      <!-- Amel logo watermark -->
+      <div class="flex justify-center mb-6">
+        <img src="Amel Vector Logo.jpeg" alt="Amel" class="h-12 sm:h-14 opacity-80" />
+      </div>
+
+      <h1 class="font-serif text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-4">
+        Where's <span class="italic text-amel-cream">Sula</span><span class="text-amel-red">?</span>
+      </h1>
+
+      <p class="text-sm uppercase tracking-[0.25em] text-white/40 font-medium mb-6">
+        Amel Super Maramu &middot; Hull #140 &middot; HKG 2270
+      </p>
+
+      <p class="text-lg sm:text-xl text-white/70 leading-relaxed max-w-2xl mx-auto mb-10 font-light">
+        Follow our voyage around the world aboard <strong class="text-white font-medium">SY Sula</strong> —
+        built in La Rochelle, France, now exploring the oceans.
+        Real-time tracking for friends &amp; family.
+      </p>
+
+      <a href="#tracker"
+        class="inline-flex items-center gap-2.5 bg-amel-red hover:bg-amel-redDark text-white font-semibold px-8 py-3.5 rounded-full transition-colors shadow-lg shadow-amel-red/25 text-base">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        See Live Position
+      </a>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-bounce z-10">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+
+    <!-- Wave divider -->
+    <div class="wave-divider">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,30 C200,55 400,5 600,30 C800,55 1000,5 1200,30 L1200,60 L0,60 Z" fill="#0B1628" />
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- RED/BLUE ACCENT LINE                               -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="amel-accent"></div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LIVE TRACKER                                       -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section id="tracker" class="bg-amel-navy py-16 sm:py-24 px-6 relative grain">
+    <div class="max-w-6xl mx-auto relative z-10">
+      <!-- Section heading -->
+      <div class="text-center mb-10">
+        <div class="inline-flex items-center gap-2 bg-amel-red/10 text-amel-red text-sm font-medium px-4 py-1.5 rounded-full mb-4 border border-amel-red/20">
+          <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+          Live Tracking
+        </div>
+        <h2 class="font-serif text-3xl sm:text-4xl font-bold tracking-tight mb-3">Real-Time Position</h2>
+        <p class="text-white/50 max-w-lg mx-auto text-sm sm:text-base">
+          Powered by PredictWind GPS. Pan, zoom, replay our journey — see weather, speed, course and track history.
+        </p>
+      </div>
+
+      <!-- Tracker embed -->
+      <div class="relative rounded-2xl overflow-hidden border border-white/10 tracker-glow"
+           style="aspect-ratio: 16/9; min-height: 480px;">
+
+        <!-- Loading state -->
+        <div class="tracker-loading" id="tracker-loading">
+          <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-sm text-white/40">Loading tracker…</p>
+          </div>
+        </div>
+
+        <!-- PredictWind iframe -->
+        <iframe
+          id="tracker-iframe"
+          src="https://www.predictwind.com/tracking/SYSula"
+          allowfullscreen
+          loading="lazy"
+          style="width:100%; height:100%; border:none; position:absolute; inset:0;"
+          title="SY Sula Live Tracker — PredictWind">
+        </iframe>
+      </div>
+
+      <!-- Tip -->
+      <p class="text-center text-xs text-white/30 mt-4">
+        💡 Use the timeline at the bottom of the map to replay the journey. Layers icon for weather overlays.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- ABOUT THE BOAT                                     -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section id="about" class="relative overflow-hidden">
+    <!-- Background with H.Amel signature watermark -->
+    <div class="absolute inset-0 bg-amel-navyLight"></div>
+    <div class="absolute bottom-0 right-0 w-[600px] opacity-[0.04] pointer-events-none translate-x-16 translate-y-8">
+      <img src="H.AMEL.pdf" alt="" class="w-full invert" />
+    </div>
+
+    <div class="relative z-10 py-16 sm:py-24 px-6">
+      <div class="max-w-6xl mx-auto">
+
+        <!-- Two-column: illustration + specs -->
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-16">
+
+          <!-- Boat illustration -->
+          <div class="order-2 lg:order-1 flex justify-center">
+            <img src="Amel Super Maramu_Sula.pdf"
+                 alt="SY Sula — Amel Super Maramu, sail plan illustration by Flemming Hansen"
+                 class="boat-illustration float w-full max-w-lg" />
+          </div>
+
+          <!-- Specs & story -->
+          <div class="order-1 lg:order-2">
+            <div class="flex items-center gap-3 mb-2">
+              <img src="Amel Vector Logo.jpeg" alt="Amel" class="h-6 opacity-70" />
+              <span class="text-xs uppercase tracking-[0.2em] text-amel-red font-semibold">Super Maramu</span>
+            </div>
+
+            <h2 class="font-serif text-3xl sm:text-4xl font-bold tracking-tight mb-2">
+              SY <span class="italic">Sula</span>
+            </h2>
+
+            <p class="text-white/40 text-sm mb-6">
+              Designed &amp; built by Chantiers Amel, La Rochelle, France
+            </p>
+
+            <p class="text-white/70 leading-relaxed mb-8">
+              The Amel Super Maramu is one of the most respected bluewater cruising yachts ever built.
+              Designed for a couple to sail safely around the world, every system is engineered
+              for reliability and ease of handling — from the in-mast furling ketch rig to the
+              protected centre cockpit.
+              <strong class="text-white">Sula</strong> is hull #140, launched in 1995, and is now
+              our home on the water.
+            </p>
+
+            <!-- Specs grid -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Builder</div>
+                <div class="text-sm font-medium">Chantiers Amel</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Model</div>
+                <div class="text-sm font-medium">Super Maramu</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Year</div>
+                <div class="text-sm font-medium">1995</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Hull</div>
+                <div class="text-sm font-medium">#140</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Sail Number</div>
+                <div class="text-sm font-medium">HKG 2270</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Rig</div>
+                <div class="text-sm font-medium">Ketch</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">LOA</div>
+                <div class="text-sm font-medium">16.15m / 53 ft</div>
+              </div>
+              <div class="spec-item pl-4">
+                <div class="text-xs text-white/40 uppercase tracking-wider mb-0.5">Origin</div>
+                <div class="text-sm font-medium">La Rochelle 🇫🇷</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Three info cards -->
+        <div class="grid sm:grid-cols-3 gap-6">
+          <div class="info-card bg-white/[0.04] rounded-2xl p-6 border border-white/[0.06]">
+            <div class="w-10 h-10 rounded-xl bg-amel-red/10 flex items-center justify-center text-xl mb-4">⛵</div>
+            <h3 class="font-serif text-lg font-semibold mb-2">The Amel Way</h3>
+            <p class="text-sm text-white/50 leading-relaxed">
+              Henri Amel's philosophy: everything should be operable from the cockpit.
+              Furling sails, anchor, engine — all at your fingertips.
+              Built for couples to cross oceans safely.
+            </p>
+          </div>
+          <div class="info-card bg-white/[0.04] rounded-2xl p-6 border border-white/[0.06]">
+            <div class="w-10 h-10 rounded-xl bg-amel-blue/10 flex items-center justify-center text-xl mb-4">🌊</div>
+            <h3 class="font-serif text-lg font-semibold mb-2">The Voyage</h3>
+            <p class="text-sm text-white/50 leading-relaxed">
+              No rigid plan — just the horizon ahead.
+              Follow along on the live tracker above to see exactly where we are, where we've been, and where the wind takes us next.
+            </p>
+          </div>
+          <div class="info-card bg-white/[0.04] rounded-2xl p-6 border border-white/[0.06]">
+            <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-xl mb-4">👋</div>
+            <h3 class="font-serif text-lg font-semibold mb-2">Friends &amp; Family</h3>
+            <p class="text-sm text-white/50 leading-relaxed">
+              This page is for you. Wherever we are in the world — whether
+              it's 3am your time or a slow Tuesday at anchor — you can always find us here.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FOOTER                                             -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <footer class="bg-amel-navy border-t border-white/5">
+    <!-- Red/blue accent -->
+    <div class="amel-accent"></div>
+
+    <div class="max-w-6xl mx-auto py-10 px-6">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+        <!-- Left: logo + name -->
+        <div class="flex items-center gap-3">
+          <img src="Amel Vector Logo.jpeg" alt="Amel" class="h-5 opacity-50" />
+          <span class="text-sm text-white/40">SY Sula &middot; Amel Super Maramu #140</span>
+        </div>
+
+        <!-- Right: links -->
+        <div class="flex items-center gap-6 text-sm text-white/40">
+          <a href="https://www.predictwind.com/tracking/SYSula" target="_blank" rel="noopener"
+            class="hover:text-amel-red transition-colors">PredictWind</a>
+          <a href="#tracker" class="hover:text-amel-red transition-colors">Live Tracker</a>
+          <a href="#" class="hover:text-amel-red transition-colors">Top ↑</a>
+        </div>
+      </div>
+
+      <!-- Credit line -->
+      <div class="mt-6 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/20">
+        <span>Made with ❤️ for friends &amp; family</span>
+        <span>Illustration © Flemming Hansen · sejlernyt.dk</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SCRIPTS                                            -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <script>
+    // ── Hide iframe loading state ──────────────────────
+    const iframe = document.getElementById('tracker-iframe');
+    const loading = document.getElementById('tracker-loading');
+    iframe.addEventListener('load', () => loading.classList.add('hidden'));
+    setTimeout(() => loading.classList.add('hidden'), 8000);
+
+    // ── Navbar scroll effect ───────────────────────────
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 50);
+    }, { passive: true });
+  </script>
 </body>
 </html>
