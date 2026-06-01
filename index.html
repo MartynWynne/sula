@@ -160,6 +160,34 @@
       transform: translateY(-4px);
       box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     }
+    
+    /* Social links styling */
+    .social-links {
+        text-align: center;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    .social-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        margin: 0 0.5rem;
+        background-color: #f0f2f5;
+        border-radius: 50px;
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .social-link:hover {
+        background-color: #e4e6e9;
+        transform: translateY(-2px);
+    }
+    .social-link.facebook:hover {
+        background-color: #1877f2;
+        color: white;
+    }
   </style>
 </head>
 
@@ -438,7 +466,16 @@
       </div>
     </div>
   </footer>
-
+  
+  <!-- Social Links -->
+  <div class="social-links">
+      <p style="margin-bottom: 1rem; opacity: 0.8;">Follow our journey</p>
+      <a href="https://www.facebook.com/share/1BCWZw8kHX/" target="_blank" rel="noopener noreferrer" class="social-link facebook">
+          <span style="font-size: 1.25rem;">📘</span>
+          <span>Facebook</span>
+      </a>
+  </div>
+  
   <!-- ═══════════════════════════════════════════════════ -->
   <!-- SCRIPTS                                            -->
   <!-- ═══════════════════════════════════════════════════ -->
